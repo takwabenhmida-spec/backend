@@ -283,6 +283,12 @@ C:\recouvrement_client\backend\bin\Debug\net10.0\RecouvrementAPI.deps.json
 C:\recouvrement_client\backend\bin\Debug\net10.0\RecouvrementAPI.runtimeconfig.json
 C:\recouvrement_client\backend\bin\Debug\net10.0\RecouvrementAPI.dll
 C:\recouvrement_client\backend\bin\Debug\net10.0\RecouvrementAPI.pdb
+C:\recouvrement_client\backend\bin\Debug\net10.0\BCrypt.Net-Next.dll
+C:\recouvrement_client\backend\bin\Debug\net10.0\ClosedXML.dll
+C:\recouvrement_client\backend\bin\Debug\net10.0\ClosedXML.Parser.dll
+C:\recouvrement_client\backend\bin\Debug\net10.0\DocumentFormat.OpenXml.dll
+C:\recouvrement_client\backend\bin\Debug\net10.0\DocumentFormat.OpenXml.Framework.dll
+C:\recouvrement_client\backend\bin\Debug\net10.0\ExcelNumberFormat.dll
 C:\recouvrement_client\backend\bin\Debug\net10.0\Microsoft.AspNetCore.Authentication.JwtBearer.dll
 C:\recouvrement_client\backend\bin\Debug\net10.0\Microsoft.AspNetCore.OpenApi.dll
 C:\recouvrement_client\backend\bin\Debug\net10.0\Microsoft.EntityFrameworkCore.dll
@@ -298,7 +304,10 @@ C:\recouvrement_client\backend\bin\Debug\net10.0\Microsoft.OpenApi.dll
 C:\recouvrement_client\backend\bin\Debug\net10.0\MySqlConnector.dll
 C:\recouvrement_client\backend\bin\Debug\net10.0\Pomelo.EntityFrameworkCore.MySql.dll
 C:\recouvrement_client\backend\bin\Debug\net10.0\QuestPDF.dll
+C:\recouvrement_client\backend\bin\Debug\net10.0\RBush.dll
+C:\recouvrement_client\backend\bin\Debug\net10.0\SixLabors.Fonts.dll
 C:\recouvrement_client\backend\bin\Debug\net10.0\System.IdentityModel.Tokens.Jwt.dll
+C:\recouvrement_client\backend\bin\Debug\net10.0\System.IO.Packaging.dll
 C:\recouvrement_client\backend\bin\Debug\net10.0\runtimes\linux-arm64\native\libQuestPdfSkia.so
 C:\recouvrement_client\backend\bin\Debug\net10.0\runtimes\linux-arm64\native\libqpdf.so
 C:\recouvrement_client\backend\bin\Debug\net10.0\runtimes\linux-musl-x64\native\libQuestPdfSkia.so
@@ -345,12 +354,3 @@ C:\recouvrement_client\backend\obj\Debug\net10.0\refint\RecouvrementAPI.dll
 C:\recouvrement_client\backend\obj\Debug\net10.0\RecouvrementAPI.pdb
 C:\recouvrement_client\backend\obj\Debug\net10.0\RecouvrementAPI.genruntimeconfig.cache
 C:\recouvrement_client\backend\obj\Debug\net10.0\ref\RecouvrementAPI.dll
-C:\recouvrement_client\backend\bin\Debug\net10.0\BCrypt.Net-Next.dll
-C:\recouvrement_client\backend\bin\Debug\net10.0\ClosedXML.dll
-C:\recouvrement_client\backend\bin\Debug\net10.0\ClosedXML.Parser.dll
-C:\recouvrement_client\backend\bin\Debug\net10.0\DocumentFormat.OpenXml.dll
-C:\recouvrement_client\backend\bin\Debug\net10.0\DocumentFormat.OpenXml.Framework.dll
-C:\recouvrement_client\backend\bin\Debug\net10.0\ExcelNumberFormat.dll
-C:\recouvrement_client\backend\bin\Debug\net10.0\RBush.dll
-C:\recouvrement_client\backend\bin\Debug\net10.0\SixLabors.Fonts.dll
-C:\recouvrement_client\backend\bin\Debug\net10.0\System.IO.Packaging.dll

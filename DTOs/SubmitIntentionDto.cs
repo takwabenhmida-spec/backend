@@ -20,7 +20,7 @@ namespace RecouvrementAPI.DTOs
         public int? ConfianceClient { get; set; }
 
         // Commentaire libre du client
-        public string? Commentaire { get; set; }
+        public string Commentaire { get; set; } = string.Empty;
         
         // ID du dossier concerné (optionnel, déduit du token si nul)
         public int? IdDossier { get; set; }

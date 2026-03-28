@@ -1,0 +1,907 @@
+{
+  "info": {
+    "_postman_id": "stb-recouvrement-api-2026",
+    "name": "🏦 STB Recouvrement API",
+    "description": "Collection complète pour tester tous les endpoints de l'API de Recouvrement STB.\n\n**AVANT DE COMMENCER :**\n1. Exécuter `Seed Admin` (une seule fois)\n2. Exécuter `Login` → le token JWT sera sauvegardé automatiquement\n3. Tester les autres endpoints (le token est injecté automatiquement)\n\nBase URL : http://localhost:5203",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:5203/api",
+      "type": "string"
+    },
+    {
+      "key": "bearerToken",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "clientToken",
+      "value": "REMPLACER_PAR_LE_TOKEN_OU_URL_CLIENT",
+      "type": "string",
+      "description": "Token d'accès (format: tok_xxx) OU URL complète reçue par SMS. Le script extraira automatiquement le code."
+    }
+  ],
+  "item": [
+    {
+      "name": "🔐 Authentification",
+      "item": [
+        {
+          "name": "Seed Admin (1 seule fois)",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/Auth/seed-admin",
+              "host": ["{{baseUrl}}"],
+              "path": ["Auth", "seed-admin"]
+            },
+            "description": "Crée le compte administrateur par défaut.\nEmail: admin@stb.tn | Password: admin123\n⚠️ À exécuter UNE SEULE FOIS si la BDD est vide."
+          }
+        },
+        {
+          "name": "Login",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 200) {",
+                  "    var json = pm.response.json();",
+                  "    pm.collectionVariables.set('bearerToken', json.token);",
+                  "    console.log('✅ Token JWT sauvegardé automatiquement !');",
+                  "    console.log('Agent: ' + json.nom + ' ' + json.prenom + ' | Rôle: ' + json.role);",
+                  "} else {",
+                  "    console.error('❌ Connexion échouée:', pm.response.json());",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"admin@stb.tn\",\n  \"motDePasse\": \"admin123\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/Auth/login",
+              "host": ["{{baseUrl}}"],
+              "path": ["Auth", "login"]
+            },
+            "description": "Authentification de l'agent. Le token JWT est automatiquement sauvegardé dans la variable `bearerToken`."
+          }
+        }
+      ]
+    },
+    {
+      "name": "📊 Dashboard",
+      "item": [
+        {
+          "name": "KPIs Principaux",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{bearerToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/Dashboard/kpi",
+              "host": ["{{baseUrl}}"],
+              "path": ["Dashboard", "kpi"]
+            },
+            "description": "Retourne les 4 KPIs du tableau de bord: Dossiers actifs, Montant impayé total, Taux de réponse relances, Intentions à traiter."
+          }
+        },
+        {
+          "name": "Dossiers Prioritaires",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{bearerToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/Dashboard/prioritaires?filtre=Tous",
+              "host": ["{{baseUrl}}"],
+              "path": ["Dashboard", "prioritaires"],
+              "query": [
+                {
+                  "key": "filtre",
+                  "value": "Tous",
+                  "description": "Valeurs: Tous | Élevé | Moyen | Faible"
+                }
+              ]
+            },
+            "description": "Top 5 des dossiers les plus risqués selon le score IA."
+          }
+        },
+        {
+          "name": "Données Graphiques (Charts)",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{bearerToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/Dashboard/charts",
+              "host": ["{{baseUrl}}"],
+              "path": ["Dashboard", "charts"]
+            },
+            "description": "Données pour les graphiques: statuts des dossiers (donut) + évolution mensuelle des paiements (barres)."
+          }
+        }
+      ]
+    },
+    {
+      "name": "👥 Gestion Clients",
+      "item": [
+        {
+          "name": "Liste des Clients (Paginée + Filtres)",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{bearerToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/ClientList/gestion?statut=Tous&agence=Toutes&page=1&pageSize=10",
+              "host": ["{{baseUrl}}"],
+              "path": ["ClientList", "gestion"],
+              "query": [
+                {
+                  "key": "statut",
+                  "value": "Tous",
+                  "description": "Valeurs: Tous | contentieux | aimable | regularise"
+                },
+                {
+                  "key": "agence",
+                  "value": "Toutes",
+                  "description": "Valeurs: Toutes | Tunis | Sfax | Sousse | ..."
+                },
+                {
+                  "key": "page",
+                  "value": "1"
+                },
+                {
+                  "key": "pageSize",
+                  "value": "10"
+                }
+              ]
+            },
+            "description": "Tableau de gestion des clients avec KPIs et pagination."
+          }
+        },
+        {
+          "name": "Fiche Client 360°",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{bearerToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/FicheClient/1",
+              "host": ["{{baseUrl}}"],
+              "path": ["FicheClient", "1"]
+            },
+            "description": "Vue complète à 360° d'un client: infos personnelles, dossiers, historique, intentions, score IA et token d'accès. Remplacer '1' par l'ID du client."
+          }
+        },
+        {
+          "name": "Créer un Nouveau Client",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{bearerToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"nom\": \"Ben Salah\",\n  \"prenom\": \"Khalil\",\n  \"cin\": \"12345678\",\n  \"adresse\": \"15 Rue de la République, Tunis\",\n  \"email\": \"khalil.bensalah@email.tn\",\n  \"telephone\": \"+216 92 345 678\",\n  \"idAgence\": 1,\n  \"premierDossier\": {\n    \"montantInitial\": 25000.000,\n    \"typeEmprunt\": \"Crédit Immobilier\",\n    \"tauxInteret\": 8.5,\n    \"statutDossier\": \"aimable\"\n  }\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/AdminClient",
+              "host": ["{{baseUrl}}"],
+              "path": ["AdminClient"]
+            },
+            "description": "Crée un nouveau client avec optionnellement son premier dossier."
+          }
+        }
+      ]
+    },
+    {
+      "name": "💰 Gestion des Impayés",
+      "item": [
+        {
+          "name": "Liste des Impayés (Paginée + Filtres)",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{bearerToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/Impaye/gestion?filtre=Tous&page=1&pageSize=10",
+              "host": ["{{baseUrl}}"],
+              "path": ["Impaye", "gestion"],
+              "query": [
+                {
+                  "key": "filtre",
+                  "value": "Tous",
+                  "description": "Valeurs: Tous | Avec intérêt >=90j | Sans intérêt | Soldé"
+                },
+                {
+                  "key": "page",
+                  "value": "1"
+                },
+                {
+                  "key": "pageSize",
+                  "value": "10"
+                }
+              ]
+            },
+            "description": "Tableau de gestion financière des impayés avec calcul des intérêts de retard (règle des 90 jours)."
+          }
+        },
+        {
+          "name": "Impayés avec intérêts (>= 90 jours)",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{bearerToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/Impaye/gestion?filtre=Avec intérêt >=90j&page=1&pageSize=10",
+              "host": ["{{baseUrl}}"],
+              "path": ["Impaye", "gestion"],
+              "query": [
+                {
+                  "key": "filtre",
+                  "value": "Avec intérêt >=90j"
+                },
+                {
+                  "key": "page",
+                  "value": "1"
+                },
+                {
+                  "key": "pageSize",
+                  "value": "10"
+                }
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "📢 Gestion des Relances",
+      "item": [
+        {
+          "name": "Dashboard Relances (Paginé + Filtres)",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{bearerToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/Relance/dashboard?canal=Tous&statut=Tous&page=1&pageSize=10",
+              "host": ["{{baseUrl}}"],
+              "path": ["Relance", "dashboard"],
+              "query": [
+                {
+                  "key": "canal",
+                  "value": "Tous",
+                  "description": "Valeurs: Tous | sms | email | appel"
+                },
+                {
+                  "key": "statut",
+                  "value": "Tous",
+                  "description": "Valeurs: Tous | envoye | repondu | sans_reponse"
+                },
+                {
+                  "key": "page",
+                  "value": "1"
+                },
+                {
+                  "key": "pageSize",
+                  "value": "10"
+                }
+              ]
+            },
+            "description": "KPIs et liste paginée de toutes les relances envoyées avec statistiques par canal."
+          }
+        },
+        {
+          "name": "Envoyer Token de Relance (SMS)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{bearerToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"canal\": \"sms\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/Relance/1/envoyer-token",
+              "host": ["{{baseUrl}}"],
+              "path": ["Relance", "1", "envoyer-token"]
+            },
+            "description": "Génère un token UUID unique pour le client et simule l'envoi d'un SMS/Email avec le lien du portail. Remplacer '1' par l'ID du dossier.\n\nCanal: 'sms' | 'email'"
+          }
+        },
+        {
+          "name": "Envoyer Token de Relance (Email)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{bearerToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"canal\": \"email\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/Relance/1/envoyer-token",
+              "host": ["{{baseUrl}}"],
+              "path": ["Relance", "1", "envoyer-token"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "🤖 Scoring IA",
+      "item": [
+        {
+          "name": "Dashboard Scoring (Paginé + Filtres)",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{bearerToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/Scoring/dashboard?etatDossier=Tous&recherche=&page=1&pageSize=10",
+              "host": ["{{baseUrl}}"],
+              "path": ["Scoring", "dashboard"],
+              "query": [
+                {
+                  "key": "etatDossier",
+                  "value": "Tous",
+                  "description": "Valeurs: Tous | aimable | contentieux"
+                },
+                {
+                  "key": "recherche",
+                  "value": "",
+                  "description": "Recherche par nom client ou ID dossier"
+                },
+                {
+                  "key": "page",
+                  "value": "1"
+                },
+                {
+                  "key": "pageSize",
+                  "value": "10"
+                }
+              ]
+            },
+            "description": "Tableau de bord du moteur de scoring IA avec priorisation des dossiers."
+          }
+        },
+        {
+          "name": "Détails Score d'un Dossier",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{bearerToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/Scoring/1/details",
+              "host": ["{{baseUrl}}"],
+              "path": ["Scoring", "1", "details"]
+            },
+            "description": "Détails complets du scoring IA pour un dossier spécifique avec la recommandation générée. Remplacer '1' par l'ID du dossier."
+          }
+        },
+        {
+          "name": "Recalculer Score d'un Dossier",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{bearerToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/Scoring/1/recalculer",
+              "host": ["{{baseUrl}}"],
+              "path": ["Scoring", "1", "recalculer"]
+            },
+            "description": "Déclenche l'algorithme de scoring IA pour un dossier spécifique et sauvegarde le résultat. Remplacer '1' par l'ID du dossier."
+          }
+        },
+        {
+          "name": "Recalculer TOUS les Scores",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{bearerToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/Scoring/recalculer-tous",
+              "host": ["{{baseUrl}}"],
+              "path": ["Scoring", "recalculer-tous"]
+            },
+            "description": "⚠️ Lance le recalcul de scoring pour TOUS les dossiers actifs. Peut prendre plusieurs secondes si la BDD est grande."
+          }
+        }
+      ]
+    },
+    {
+      "name": "📋 Intentions (Agent)",
+      "item": [
+        {
+          "name": "Dashboard Intentions (Paginé + Filtres)",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{bearerToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/Intention/dashboard?typeIntention=Tous&statut=Tous&page=1&pageSize=10",
+              "host": ["{{baseUrl}}"],
+              "path": ["Intention", "dashboard"],
+              "query": [
+                {
+                  "key": "typeIntention",
+                  "value": "Tous",
+                  "description": "Valeurs: Tous | paiement_immediat | promesse_paiement | paiement_partiel | reclamation"
+                },
+                {
+                  "key": "statut",
+                  "value": "Tous",
+                  "description": "Valeurs: Tous | En attente | Accepté | Refusé"
+                },
+                {
+                  "key": "page",
+                  "value": "1"
+                },
+                {
+                  "key": "pageSize",
+                  "value": "10"
+                }
+              ]
+            },
+            "description": "Vue agent des intentions soumises par les clients avec KPIs et indicateurs de confiance."
+          }
+        },
+        {
+          "name": "Décision sur une Intention (Accepter/Refuser)",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{bearerToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"decision\": \"Accepter\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/Intention/1/decision",
+              "host": ["{{baseUrl}}"],
+              "path": ["Intention", "1", "decision"]
+            },
+            "description": "L'agent accepte ou refuse une intention soumise par un client. Remplacer '1' par l'ID de l'intention.\n\nDécision: 'Accepter' | 'Refuser'"
+          }
+        }
+      ]
+    },
+    {
+      "name": "🌐 Portail Client",
+      "event": [
+        {
+          "listen": "prerequest",
+          "script": {
+            "exec": [
+              "// Script d'extraction automatique du token si l'utilisateur colle une URL",
+              "let token = pm.collectionVariables.get('clientToken');",
+              "",
+              "if (token && (token.includes('http://') || token.includes('https://'))) {",
+              "    console.log('🔗 URL détectée, extraction du token...');",
+              "    const parts = token.split('/');",
+              "    const extracted = parts[parts.length - 1];",
+              "    pm.variables.set('extractedToken', extracted);",
+              "    console.log('✅ Token extrait :', extracted);",
+              "} else {",
+              "    pm.variables.set('extractedToken', token);",
+              "}"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ],
+      "item": [
+        {
+          "name": "Historique Dossiers du Client",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/client/historique/{{extractedToken}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["client", "historique", "{{extractedToken}}"]
+            },
+            "description": "Retourne tous les dossiers du client authentifié par son token. C'est le point d'entrée principal du portail client.\n\nRemplacer `clientToken` dans les variables de la collection par un token valide OU l'URL complète."
+          }
+        },
+        {
+          "name": "Soumettre une Intention",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"typeIntention\": \"promesse_paiement\",\n  \"datePaiementPrevue\": \"2026-04-15T00:00:00\",\n  \"montantPropose\": null,\n  \"confianceClient\": 85,\n  \"commentaire\": \"Je peux régler d'ici le 15 avril après réception de mon salaire.\",\n  \"idDossier\": null\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/client/intention/{{clientToken}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["client", "intention", "{{clientToken}}"]
+            },
+            "description": "Le client soumet son intention de paiement. Retourne l'idIntention pour télécharger l'accusé de réception.\n\ntypeIntention: paiement_immediat | promesse_paiement | paiement_partiel | reclamation | demande_consolidation"
+          }
+        },
+        {
+          "name": "Télécharger Accusé de Réception (PDF)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/client/accuse-reception/{{clientToken}}/1",
+              "host": ["{{baseUrl}}"],
+              "path": ["client", "accuse-reception", "{{clientToken}}", "1"]
+            },
+            "description": "Génère et télécharge le PDF officiel STB Bank d'accusé de réception. Remplacer '1' par l'idIntention reçu lors de la soumission."
+          }
+        },
+        {
+          "name": "Télécharger Reçu de Situation (PDF)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/client/recu/{{clientToken}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["client", "recu", "{{clientToken}}"]
+            },
+            "description": "Génère un PDF récapitulatif du dossier du client avec montant dû, intérêts et total à régler. Paramètre optionnel: ?idDossier=X"
+          }
+        },
+        {
+          "name": "Envoyer un Message Libre",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"contenu\": \"Bonjour, je souhaite négocier un échelonnement de ma dette.\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/client/message/{{clientToken}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["client", "message", "{{clientToken}}"]
+            },
+            "description": "Le client envoie un message libre à son agence."
+          }
+        },
+        {
+          "name": "Répondre à une Relance",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"contenu\": \"J'ai bien reçu votre relance. Je vais régler la situation cette semaine.\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/client/repondre-relance/{{clientToken}}/1",
+              "host": ["{{baseUrl}}"],
+              "path": ["client", "repondre-relance", "{{clientToken}}", "1"]
+            },
+            "description": "Le client répond à une relance spécifique. Remplacer '1' par l'idRelance. La relance passe en statut 'repondu'."
+          }
+        },
+        {
+          "name": "Uploader un Justificatif",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                {
+                  "key": "File",
+                  "type": "file",
+                  "description": "Sélectionner un fichier PDF, JPG ou PNG (max 5MB)"
+                }
+              ]
+            },
+            "url": {
+              "raw": "{{baseUrl}}/client/upload/{{clientToken}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["client", "upload", "{{clientToken}}"]
+            },
+            "description": "Upload d'un justificatif de paiement. Formats acceptés: PDF, JPG, JPEG, PNG. Taille max: 5MB."
+          }
+        },
+        {
+          "name": "Télécharger Historique PDF",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/client/historique-pdf/{{clientToken}}/1",
+              "host": ["{{baseUrl}}"],
+              "path": ["client", "historique-pdf", "{{clientToken}}", "1"]
+            },
+            "description": "Génère un PDF de l'historique complet d'un dossier client. Remplacer '1' par l'ID du dossier."
+          }
+        }
+      ]
+    },
+    {
+      "name": "⚙️ Administration",
+      "item": [
+        {
+          "name": "Export Excel (Impayés)",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{bearerToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/AdminClient/export/excel",
+              "host": ["{{baseUrl}}"],
+              "path": ["AdminClient", "export", "excel"]
+            },
+            "description": "Télécharge un fichier Excel formaté de tous les dossiers impayés pour la comptabilité STB (avec code couleur rouge pour retards > 90 jours)."
+          }
+        },
+        {
+          "name": "Générer Lettre Mise en Demeure (PDF)",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{bearerToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/AdminClient/mise-en-demeure/1",
+              "host": ["{{baseUrl}}"],
+              "path": ["AdminClient", "mise-en-demeure", "1"]
+            },
+            "description": "Génère la lettre officielle de mise en demeure au format PDF à en-tête STB. Remplacer '1' par l'ID du dossier."
+          }
+        },
+        {
+          "name": "Archiver Clients Soldés",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{bearerToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/AdminClient/archiver-soldes",
+              "host": ["{{baseUrl}}"],
+              "path": ["AdminClient", "archiver-soldes"]
+            },
+            "description": "Archive automatiquement tous les clients dont TOUS les dossiers sont au statut 'regularise'. Retourne le nombre de clients archivés."
+          }
+        }
+      ]
+    },
+    {
+      "name": "👤 Gestion Utilisateurs",
+      "item": [
+        {
+          "name": "Liste Utilisateurs (Paginée + Filtres)",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{bearerToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/Utilisateur/gestion?agence=Toutes&role=Tous&page=1&pageSize=10",
+              "host": ["{{baseUrl}}"],
+              "path": ["Utilisateur", "gestion"],
+              "query": [
+                {
+                  "key": "agence",
+                  "value": "Toutes"
+                },
+                {
+                  "key": "role",
+                  "value": "Tous",
+                  "description": "Valeurs: Tous | Admin | Agent"
+                },
+                {
+                  "key": "page",
+                  "value": "1"
+                },
+                {
+                  "key": "pageSize",
+                  "value": "10"
+                }
+              ]
+            },
+            "description": "Récupère la liste paginée des agents et administrateurs du back-office."
+          }
+        },
+        {
+          "name": "Créer un Utilisateur (Agent/Admin)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{bearerToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"nom\": \"Trabelsi\",\n  \"prenom\": \"Nadia\",\n  \"email\": \"nadia.trabelsi@stb.tn\",\n  \"telephone\": \"+216 71 234 567\",\n  \"motDePasse\": \"Agent2026!\",\n  \"role\": \"Agent\",\n  \"idAgence\": 1\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/Utilisateur",
+              "host": ["{{baseUrl}}"],
+              "path": ["Utilisateur"]
+            },
+            "description": "Crée un nouveau compte agent ou administrateur.\n\nRole: 'Agent' | 'Admin'"
+          }
+        },
+        {
+          "name": "Modifier un Utilisateur",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{bearerToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"nom\": \"Trabelsi\",\n  \"prenom\": \"Nadia\",\n  \"telephone\": \"+216 71 999 888\",\n  \"role\": \"Admin\",\n  \"idAgence\": 2\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/Utilisateur/1",
+              "host": ["{{baseUrl}}"],
+              "path": ["Utilisateur", "1"]
+            },
+            "description": "Modifie les informations d'un utilisateur (nom, rôle, agence). Remplacer '1' par l'ID de l'agent."
+          }
+        },
+        {
+          "name": "Activer / Désactiver un Compte Agent",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{bearerToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/Utilisateur/1/statut",
+              "host": ["{{baseUrl}}"],
+              "path": ["Utilisateur", "1", "statut"]
+            },
+            "description": "Bascule le statut d'un agent entre Actif et Inactif (suppression logique). Remplacer '1' par l'ID de l'agent."
+          }
+        }
+      ]
+    }
+  ]
+}
