@@ -53,6 +53,10 @@ namespace RecouvrementAPI.Controllers
                 if (client == null)
                     return NotFound(new { message = "La fiche de ce client n'existe pas en base." });
 
+                // Refus d'accès si le client est archivé
+                if (client.Statut == "Archivé")
+                    return BadRequest(new { message = "Ce client est archivé et ne peut plus être consulté depuis le Back-office actif." });
+
                 // 1. Informations Personnelles (Haut Gauche)
                 // Extrait le statut de dossier le plus grave (contentieux > aimable > regularise)
                 var statutOrdre = new List<string> { "contentieux", "aimable", "regularise" };

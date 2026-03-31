@@ -43,6 +43,7 @@ namespace RecouvrementAPI.Controllers
                     .Include(d => d.ScoresRisque)
                     .Include(d => d.Echeances) 
                     .Include(d => d.Intentions.OrderByDescending(i => i.DateIntention))
+                    .Where(d => d.Client.Statut != "Archivé") // Masquer les clients archivés
                     .AsQueryable();
 
                 if (!string.IsNullOrEmpty(etatDossier) && etatDossier != "Tous")

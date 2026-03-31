@@ -36,6 +36,9 @@ namespace RecouvrementAPI.Controllers
                 if (await _context.Clients.AnyAsync(c => c.CIN == dto.CIN))
                     return BadRequest(new { message = "Un client avec ce CIN existe déjà." });
 
+                if (await _context.Clients.AnyAsync(c => c.Email == dto.Email))
+                    return BadRequest(new { message = "Un client avec cet Email existe déjà." });
+
                 var client = new Client
                 {
                     Nom = dto.Nom,
@@ -45,7 +48,7 @@ namespace RecouvrementAPI.Controllers
                     Email = dto.Email,
                     Telephone = dto.Telephone,
                     IdAgence = dto.IdAgence ?? 1, // Direction Générale par défaut si non spécifié
-                    TokenAcces = "tok_" + Guid.NewGuid().ToString("N").Substring(0, 16)
+                    TokenAcces = "stb_" + Guid.NewGuid().ToString("N")
                 };
 
                 _context.Clients.Add(client);
@@ -61,7 +64,7 @@ namespace RecouvrementAPI.Controllers
                         MontantImpaye = dto.PremierDossier.MontantInitial,
                         TypeEmprunt = dto.PremierDossier.TypeEmprunt,
                         TauxInteret = dto.PremierDossier.TauxInteret,
-                        StatutDossier = dto.PremierDossier.StatutDossier ?? "aimable",
+                        StatutDossier = dto.PremierDossier.StatutDossier , 
                         DateCreation = DateTime.Now
                     };
                     _context.Dossiers.Add(dossier);
@@ -245,7 +248,6 @@ namespace RecouvrementAPI.Controllers
         {
             try
             {
-                // On récupère les clients actifs qui ont au moins un dossier
                 var clients = await _context.Clients
                     .Include(c => c.Dossiers)
                     .Where(c => c.Statut != "Archivé")
@@ -257,9 +259,7 @@ namespace RecouvrementAPI.Controllers
                 {
                     if (client.Dossiers != null && client.Dossiers.Any())
                     {
-                        // Si TOUS les dossiers sont régularisés (soldés)
                         bool toutSolder = client.Dossiers.All(d => d.StatutDossier == "regularise" || d.MontantImpaye <= 0);
-
                         if (toutSolder)
                         {
                             client.Statut = "Archivé";
@@ -269,9 +269,7 @@ namespace RecouvrementAPI.Controllers
                 }
 
                 if (archivesCount > 0)
-                {
                     await _context.SaveChangesAsync();
-                }
 
                 return Ok(new { 
                     message = $"{archivesCount} client(s) ont été archivés avec succès car leurs comptes sont soldés.",
@@ -282,6 +280,77 @@ namespace RecouvrementAPI.Controllers
             {
                 _logger.LogError(ex, "Erreur lors de l'archivage automatique.");
                 return StatusCode(500, new { message = "Une erreur est survenue lors de l'archivage." });
+            }
+        }
+
+        /// <summary>
+        /// 🟡 BOUTON "ARCHIVER" DE LA MAQUETTE — Archive UN seul client par son ID.
+        /// Appelé quand l'agent clique sur le bouton "Archiver" sur la fiche client.
+        /// Route API : PUT http://localhost:5203/api/AdminClient/{idClient}/archiver
+        /// </summary>
+        [HttpPut("{idClient}/archiver")]
+        public async Task<IActionResult> ArchiverClient(int idClient)
+        {
+            try
+            {
+                var client = await _context.Clients
+                    .Include(c => c.Dossiers)
+                    .FirstOrDefaultAsync(c => c.IdClient == idClient);
+
+                if (client == null)
+                    return NotFound(new { message = "Client introuvable." });
+
+                if (client.Statut == "Archivé")
+                    return BadRequest(new { message = "Ce client est déjà archivé." });
+
+                client.Statut = "Archivé";
+                await _context.SaveChangesAsync();
+
+                return Ok(new
+                {
+                    message = $"Le client {client.Nom} {client.Prenom} a été archivé avec succès.",
+                    idClient = client.IdClient,
+                    statut = client.Statut
+                });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, $"Erreur lors de l'archivage du client {idClient}.");
+                return StatusCode(500, new { message = "Une erreur est survenue lors de l'archivage." });
+            }
+        }
+
+        /// <summary>
+        /// 🔵 BOUTON "DÉSARCHIVER" — Réactive un client archivé par son ID.
+        /// Route API : PUT http://localhost:5203/api/AdminClient/{idClient}/desarchiver
+        /// </summary>
+        [HttpPut("{idClient}/desarchiver")]
+        public async Task<IActionResult> DesarchiverClient(int idClient)
+        {
+            try
+            {
+                var client = await _context.Clients.FindAsync(idClient);
+
+                if (client == null)
+                    return NotFound(new { message = "Client introuvable." });
+
+                if (client.Statut != "Archivé")
+                    return BadRequest(new { message = "Ce client n'est pas archivé." });
+
+                client.Statut = "Actif";
+                await _context.SaveChangesAsync();
+
+                return Ok(new
+                {
+                    message = $"Le client {client.Nom} {client.Prenom} a été réactivé avec succès.",
+                    idClient = client.IdClient,
+                    statut = client.Statut
+                });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, $"Erreur lors de la désarchivation du client {idClient}.");
+                return StatusCode(500, new { message = "Une erreur est survenue." });
             }
         }
     }

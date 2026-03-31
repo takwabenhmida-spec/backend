@@ -158,8 +158,8 @@ namespace RecouvrementAPI.Controllers
                 if (dossier == null)
                     return NotFound(new { message = "Dossier introuvable." });
 
-                // 1. Génération d'un UUID inviolable (Ex: tok_8f4d2a1b9e...)
-                string nouveauToken = "tok_" + Guid.NewGuid().ToString("N").Substring(0, 16);
+                // 1. Génération d'un UUID inviolable
+                string nouveauToken = Guid.NewGuid().ToString("N");
                 
                 // 2. Mise à jour du client
                 dossier.Client.TokenAcces = nouveauToken;
@@ -179,7 +179,7 @@ namespace RecouvrementAPI.Controllers
                 await _context.SaveChangesAsync();
 
                 // 4. Construction de la simulation pour la démo
-                string lien = $"https://stb.tn/portail/{nouveauToken}";
+                string lien = $"https://stbbank.tn/portail/{nouveauToken}";
                 string messageSimulation = req.Canal == "sms"
                     ? $"[SIMULATION SMS] STB BANK: Cher {dossier.Client.Nom}, veuillez régler votre retard d'urgence via : {lien}"
                     : $"[SIMULATION E-MAIL] Objet: STB BANK - Action Requise. Bonjour, voici votre accès sécurisé: {lien}";

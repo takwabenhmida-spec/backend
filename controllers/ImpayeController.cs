@@ -43,6 +43,7 @@ namespace RecouvrementAPI.Controllers
                 var dossiers = await _context.Dossiers
                     .Include(d => d.Client)
                     .Include(d => d.Echeances)
+                    .Where(d => d.Client.Statut != "Archivé") // Masquer les clients archivés
                     .ToListAsync();
 
                 // Transforme la structure BD en format orienté Gestion d'Impayé Financier
