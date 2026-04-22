@@ -45,15 +45,21 @@ namespace RecouvrementAPI.Controllers
         public async Task<IActionResult> PostIntention(string token, [FromBody] SubmitIntentionDto dto)
         {
             // 1. Authentification par token UUID
+            if (string.IsNullOrEmpty(token))
+                return Unauthorized("Token manquant.");
+
+            // Normalisation : support des tirets
+            var tokenNettoye = token.Replace("-", "");
+
             var client = await _context.Clients
                 .Include(c => c.Dossiers)
-                .FirstOrDefaultAsync(c => c.TokenAcces == token);
+                .FirstOrDefaultAsync(c => c.TokenAcces == token || c.TokenAcces == tokenNettoye);
 
             if (client == null)
-                return Unauthorized(AppConstants.TokenInvalid);
+                return Unauthorized("Token non trouvé dans la base de données. Vérifiez l'exactitude du lien.");
 
             if (client.TokenExpireLe.HasValue && client.TokenExpireLe.Value < DateTime.UtcNow)
-                return Unauthorized(AppConstants.TokenInvalid);
+                return Unauthorized($"Token expiré depuis le {client.TokenExpireLe.Value:dd/MM/yyyy HH:mm} (UTC). Veuillez demander un nouveau lien.");
 
             // 2. Validation du body
             if (dto == null)

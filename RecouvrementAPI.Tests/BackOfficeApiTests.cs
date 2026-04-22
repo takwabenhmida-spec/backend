@@ -208,6 +208,30 @@ namespace RecouvrementAPI.Tests
             var r = await PostWithAuth("/api/AdminClient/archiver-soldes", token);
             Assert.Equal(HttpStatusCode.OK, r.StatusCode);
         }
+
+        [Fact]
+        public async Task FicheClient_Get_ShouldReturnOk_WhenAuthenticated()
+        {
+            var token = await GetAdminTokenAsync();
+            // Dossier 1 was seeded in factory for client 1
+            var r = await GetWithAuth("/api/FicheClient/1", token);
+            Assert.Equal(HttpStatusCode.OK, r.StatusCode);
+        }
+
+        [Fact]
+        public async Task FicheClient_Get_ShouldReturnNotFound_WhenInexistant()
+        {
+            var token = await GetAdminTokenAsync();
+            var r = await GetWithAuth("/api/FicheClient/99999", token);
+            Assert.Equal(HttpStatusCode.NotFound, r.StatusCode);
+        }
+
+        [Fact]
+        public async Task FicheClient_Get_ShouldReturnUnauthorized_WhenNoToken()
+        {
+            var r = await _client.GetAsync("/api/FicheClient/1");
+            Assert.Equal(HttpStatusCode.Unauthorized, r.StatusCode);
+        }
     }
 }
 

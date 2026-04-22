@@ -23,6 +23,8 @@ namespace RecouvrementAPI.Controllers
         private readonly RecouvrementAPI.Services.IEmailService _emailService;
         private readonly RecouvrementAPI.Services.ISmsService _smsService;
 
+        private const string CanalEmail = "email";
+
         public RelanceController(
             ApplicationDbContext context, 
             ILogger<RelanceController> logger,
@@ -153,7 +155,7 @@ namespace RecouvrementAPI.Controllers
                 
                 // 2. Mise à jour du client
                 dossier.Client.TokenAcces = nouveauToken;
-                dossier.Client.TokenExpireLe = DateTime.Now.AddDays(7);
+                dossier.Client.TokenExpireLe = DateTime.UtcNow.AddDays(7);
 
                 // 3. Traçabilité (Création de la relance manuelle)
                 var relance = new RelanceClient
@@ -161,7 +163,7 @@ namespace RecouvrementAPI.Controllers
                     IdDossier = dossier.IdDossier,
                     Moyen = req.Canal ?? "sms", // Par défaut on simule un sms
                     Statut = AppConstants.RelanceStatut.Sent,
-                    DateRelance = DateTime.Now,
+                    DateRelance = DateTime.UtcNow,
                     Contenu = $"Envoi {req.Canal} manuel depuis interface"
                 };
 
@@ -181,7 +183,7 @@ namespace RecouvrementAPI.Controllers
                         await _smsService.SendSmsAsync(dossier.Client.Telephone, messageSimulation);
                     }
                 }
-                else if (req.Canal == "email")
+                else if (req.Canal == CanalEmail)
                 {
                     messageSimulation = $"[ENVOI E-MAIL] STB BANK - Action Requise. Accès sécurisé : {lien}";
                     if (!string.IsNullOrEmpty(dossier.Client.Email))
@@ -222,9 +224,9 @@ namespace RecouvrementAPI.Controllers
                 SmsRepondus = relances.Count(r => r.Moyen == "sms" && r.Statut == AppConstants.RelanceStatut.Replied),
                 SmsEnAttente = relances.Count(r => r.Moyen == "sms" && r.Statut != AppConstants.RelanceStatut.Replied),
 
-                EmailsEnvoyes = relances.Count(r => r.Moyen == "email"),
-                EmailsRepondus = relances.Count(r => r.Moyen == "email" && r.Statut == AppConstants.RelanceStatut.Replied),
-                EmailsEnAttente = relances.Count(r => r.Moyen == "email" && r.Statut != AppConstants.RelanceStatut.Replied)
+                EmailsEnvoyes = relances.Count(r => r.Moyen == CanalEmail),
+                EmailsRepondus = relances.Count(r => r.Moyen == CanalEmail && r.Statut == AppConstants.RelanceStatut.Replied),
+                EmailsEnAttente = relances.Count(r => r.Moyen == CanalEmail && r.Statut != AppConstants.RelanceStatut.Replied)
             };
         }
 

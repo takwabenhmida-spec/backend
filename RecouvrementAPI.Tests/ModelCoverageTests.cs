@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using RecouvrementAPI.Models;
+using RecouvrementAPI.Models.ML;
 using Xunit;
 
 namespace RecouvrementAPI.Tests
@@ -149,11 +150,13 @@ namespace RecouvrementAPI.Tests
             var model = new IntentionClient 
             { 
                 IdIntention = 1, IdDossier = 1, TypeIntention = "T", DateIntention = date, 
-                DatePaiementPrevue = dateP, MontantPropose = 100, Statut = "S", Dossier = dossier 
+                DatePaiementPrevue = dateP, MontantPropose = 100, Statut = "S", Dossier = dossier,
+                Commentaire = "C"
             };
             _ = model.IdIntention; _ = model.IdDossier; _ = model.TypeIntention;
             _ = model.DateIntention; _ = model.DatePaiementPrevue;
             _ = model.MontantPropose; _ = model.Statut; _ = model.Dossier;
+            _ = model.Commentaire;
             Assert.Equal(1, model.IdIntention);
         }
 
@@ -203,6 +206,33 @@ namespace RecouvrementAPI.Tests
             _ = model.Email; _ = model.MotDePasse; _ = model.Role; _ = model.Statut;
             _ = model.Agence;
             Assert.Equal(1, model.IdAgent);
+        }
+
+        [Fact]
+        public void ScoringInput_Coverage()
+        {
+            var model = new ScoringInput
+            {
+                Retard = 10,
+                Historique = 20,
+                Garantie = 30,
+                Intention = 40,
+                Score = 50
+            };
+            _ = model.Retard; _ = model.Historique; _ = model.Garantie;
+            _ = model.Intention; _ = model.Score;
+            Assert.Equal(10, model.Retard);
+        }
+
+        [Fact]
+        public void ScoringPrediction_Coverage()
+        {
+            var model = new ScoringPrediction
+            {
+                Score = 80.5f
+            };
+            _ = model.Score;
+            Assert.Equal(80.5f, model.Score);
         }
     }
 }

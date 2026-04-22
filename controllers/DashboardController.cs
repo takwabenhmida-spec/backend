@@ -151,7 +151,7 @@ namespace RecouvrementAPI.Controllers
                     }).ToListAsync();
 
                 // Graphique en Bâtons : Évolution mensuelle sur l'année en cours
-                var currentYear = DateTime.Now.Year;
+                var currentYear = DateTime.UtcNow.Year;
                 var paiements = await _context.HistoriquePaiements
                     .Where(p => p.DatePaiement.Year == currentYear)
                     .ToListAsync();

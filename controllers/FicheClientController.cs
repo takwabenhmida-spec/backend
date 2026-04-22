@@ -90,12 +90,12 @@ namespace RecouvrementAPI.Controllers
                 {
                     iaPanel = new ScoringDetailsDto
                     {
-                        PtsRetard = scoresTousDossiers.PointsRetard,
-                        PtsHistorique = scoresTousDossiers.PointsHistorique,
-                        PtsGarantie = scoresTousDossiers.PointsGarantie,
-                        PtsIntention = scoresTousDossiers.PointsIntention,
-                        ScoreTotal = scoresTousDossiers.ScoreTotal
-                    };
+                        PtsRetard     = scoresTousDossiers.PointsRetard     ?? 0,
+                        PtsHistorique = scoresTousDossiers.PointsHistorique ?? 0,
+                        PtsGarantie   = scoresTousDossiers.PointsGarantie   ?? 0,
+                         PtsIntention  = scoresTousDossiers.PointsIntention  ?? 0,
+                         ScoreTotal    = scoresTousDossiers.ScoreTotal        ?? 0
+                   };
                 }
 
                 // 3. Dossiers du client (Tableau Central 1)

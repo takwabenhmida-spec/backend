@@ -1,3 +1,4 @@
+#nullable enable
 using Microsoft.AspNetCore.Mvc;
 using RecouvrementAPI;
 using Microsoft.EntityFrameworkCore;
@@ -28,8 +29,13 @@ namespace RecouvrementAPI.Controllers
         // Utilisée par toutes les méthodes qui ont besoin des sous-relations.
         // Vérifie aussi l'expiration du token.
         // ==============================
-        private async Task<Client> ChargerClientComplet(string token)
+        private async Task<(Client? client, string? error)> ChargerClientComplet(string token)
         {
+            if (string.IsNullOrWhiteSpace(token)) return (null, "Token manquant");
+
+            // Normalisation : on supporte les tokens avec ou sans tirets
+            var tokenNettoye = token.Replace("-", "");
+
             var client = await _context.Clients
                 .Include(c => c.Agence)
                 .Include(c => c.Dossiers)
@@ -40,15 +46,18 @@ namespace RecouvrementAPI.Controllers
                     .ThenInclude(d => d.Relances)
                 .Include(c => c.Dossiers)
                     .ThenInclude(d => d.Communications)
-                .FirstOrDefaultAsync(c => c.TokenAcces == token);
+                .Include(c => c.Dossiers)
+                    .ThenInclude(d => d.Intentions) // Ajouté pour Centralisation
+                .FirstOrDefaultAsync(c => c.TokenAcces == token || c.TokenAcces == tokenNettoye);
 
-            if (client == null) return null;
+            if (client == null) 
+                return (null, "Token non trouvé dans la base de données. Vérifiez l'exactitude du lien.");
 
             // Vérification expiration du token (7 jours)
             if (client.TokenExpireLe.HasValue && client.TokenExpireLe.Value < DateTime.UtcNow)
-                return null;
+                return (null, $"Token expiré depuis le {client.TokenExpireLe.Value:dd/MM/yyyy HH:mm} (UTC). Veuillez demander un nouveau lien.");
 
-            return client;
+            return (client, null);
         }
 
         // ==============================
@@ -56,9 +65,11 @@ namespace RecouvrementAPI.Controllers
         // • idDossier fourni  → ce dossier précis (anti-IDOR)
         // • idDossier null    → dossier le plus récent (comportement par défaut)
         // ==============================
-        private static DossierRecouvrement ResoudreDossier(Client client, int? idDossier)
+        private static DossierRecouvrement? ResoudreDossier(Client client, int? idDossier)
         {
-            if (idDossier.HasValue && client.Dossiers != null)
+            if (client.Dossiers == null) return null;
+
+            if (idDossier.HasValue)
                 return client.Dossiers.FirstOrDefault(d => d.IdDossier == idDossier.Value);
 
             return client.Dossiers
@@ -69,7 +80,7 @@ namespace RecouvrementAPI.Controllers
         // ==============================
         // MÉTHODE PRIVÉE : Mapper DossierRecouvrement → DossierDto
         // ==============================
-        private DossierDto MapDossierToDto(DossierRecouvrement dossier)
+        private static DossierDto MapDossierToDto(DossierRecouvrement dossier)
         {
             int joursRetard = RecouvrementHelper.CalculerJoursRetard(dossier.Echeances);
 
@@ -121,6 +132,15 @@ namespace RecouvrementAPI.Controllers
                     Origine   = c.Origine,
                     DateEnvoi = c.DateEnvoi,
                     IdRelance = c.IdRelance
+                }).ToList(),
+
+                Intentions = dossier.Intentions.Select(i => new IntentionItemDto
+                {
+                    IdIntention    = i.IdIntention,
+                    IdDossier      = i.IdDossier,
+                    DateSoumission = i.DateIntention,
+                    Statut         = i.Statut,
+                    TypeIntention  = i.TypeIntention
                 }).ToList()
             };
         }
@@ -132,13 +152,8 @@ namespace RecouvrementAPI.Controllers
         [HttpGet("historique/{token?}")]
         public async Task<IActionResult> GetHistorique(string token)
         {
-            if (string.IsNullOrEmpty(token))
-                return Unauthorized("Token manquant");
-
-            var client = await ChargerClientComplet(token);
-
-            if (client == null)
-                return Unauthorized(AppConstants.TokenInvalid);
+            var (client, error) = await ChargerClientComplet(token);
+            if (client == null) return Unauthorized(error);
 
             var dossierPrincipal = client.Dossiers
                 .OrderByDescending(d => d.DateCreation)
@@ -183,13 +198,8 @@ namespace RecouvrementAPI.Controllers
         [HttpGet("dossier/{token}/{idDossier}")]
         public async Task<IActionResult> GetDossierPrecis(string token, int idDossier)
         {
-            if (string.IsNullOrEmpty(token))
-                return Unauthorized("Token manquant");
-
-            var client = await ChargerClientComplet(token);
-
-            if (client == null)
-                return Unauthorized(AppConstants.TokenInvalid);
+            var (client, error) = await ChargerClientComplet(token);
+            if (client == null) return Unauthorized(error);
 
             var dossier = client.Dossiers.FirstOrDefault(d => d.IdDossier == idDossier);
 
@@ -218,10 +228,8 @@ namespace RecouvrementAPI.Controllers
         [HttpGet("recu/{token}")]
         public async Task<IActionResult> GenerateRecu(string token, [FromQuery] int? idDossier = null)
         {
-            // 1. Chargement unique — inclut Echeances, pas besoin de 2ème appel DB
-            var client = await ChargerClientComplet(token);
-            if (client == null)
-                return Unauthorized(AppConstants.TokenInvalid);
+            var (client, error) = await ChargerClientComplet(token);
+            if (client == null) return Unauthorized(error);
 
             // 2. Sélection du dossier (cible ou le plus récent)
             var dossier = ResoudreDossier(client, idDossier);
@@ -316,10 +324,8 @@ namespace RecouvrementAPI.Controllers
         [HttpGet("historique-pdf/{token}/{idDossier}")]
         public async Task<IActionResult> GenerateHistoriquePdf(string token, int idDossier)
         {
-            // Chargement unique via ChargerClientComplet — supprime le bloc Include dupliqué
-            var client = await ChargerClientComplet(token);
-            if (client == null)
-                return Unauthorized(AppConstants.TokenInvalid);
+            var (client, error) = await ChargerClientComplet(token);
+            if (client == null) return Unauthorized(error);
 
             var dossier = client.Dossiers.FirstOrDefault(d => d.IdDossier == idDossier);
             if (dossier == null)
@@ -415,17 +421,8 @@ namespace RecouvrementAPI.Controllers
         [HttpGet("accuse-reception/{token}/{idIntention}")]
         public async Task<IActionResult> GenerateAccuseReception(string token, int idIntention)
         {
-            var client = await _context.Clients
-                .Include(c => c.Agence)
-                .Include(c => c.Dossiers)
-                    .ThenInclude(d => d.Intentions)
-                .FirstOrDefaultAsync(c => c.TokenAcces == token);
-
-            if (client == null)
-                return Unauthorized(AppConstants.TokenInvalid);
-
-            if (client.TokenExpireLe.HasValue && client.TokenExpireLe.Value < DateTime.UtcNow)
-                return Unauthorized(AppConstants.TokenInvalid);
+            var (client, error) = await ChargerClientComplet(token);
+            if (client == null) return Unauthorized(error);
 
             var intention = client.Dossiers
                 .SelectMany(d => d.Intentions)
@@ -529,12 +526,8 @@ namespace RecouvrementAPI.Controllers
             if (string.IsNullOrWhiteSpace(messageDto?.Contenu))
                 return BadRequest("Le contenu du message est requis.");
 
-            var client = await _context.Clients
-                .Include(c => c.Dossiers)
-                .FirstOrDefaultAsync(c => c.TokenAcces == token);
-
-            if (client == null)
-                return Unauthorized(AppConstants.TokenInvalid);
+            var (client, error) = await ChargerClientComplet(token);
+            if (client == null) return Unauthorized(error);
 
             var dossier = ResoudreDossier(client, idDossier);
             if (dossier == null)
@@ -578,13 +571,8 @@ namespace RecouvrementAPI.Controllers
             if (string.IsNullOrWhiteSpace(reponseDto?.Contenu))
                 return BadRequest("Le contenu de la réponse est requis.");
 
-            var client = await _context.Clients
-                .Include(c => c.Dossiers)
-                    .ThenInclude(d => d.Relances)
-                .FirstOrDefaultAsync(c => c.TokenAcces == token);
-
-            if (client == null)
-                return Unauthorized(AppConstants.TokenInvalid);
+            var (client, error) = await ChargerClientComplet(token);
+            if (client == null) return Unauthorized(error);
 
             // Anti-IDOR : la relance doit appartenir à un dossier du client
             var dossier = client.Dossiers

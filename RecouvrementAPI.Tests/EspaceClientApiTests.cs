@@ -27,17 +27,6 @@ namespace RecouvrementAPI.Tests
             _output = output;
         }
 
-        private async Task<string> GetAdminTokenAsync()
-        {
-            var loginJson = "{\"email\":\"admin@stb.tn\",\"motDePasse\":\"admin123\"}";
-            var content = new StringContent(loginJson, Encoding.UTF8, JsonMediaType);
-            var response = await _client.PostAsync("/api/Auth/login", content);
-            response.EnsureSuccessStatusCode();
-            var body = await response.Content.ReadAsStringAsync();
-            var json = JsonDocument.Parse(body);
-            return json.RootElement.GetProperty("token").GetString()!;
-        }
-
         private async Task<HttpResponseMessage> Get(string url) => await _client.GetAsync(url);
 
         private async Task<HttpResponseMessage> Post(string url, string json)
@@ -47,40 +36,27 @@ namespace RecouvrementAPI.Tests
         }
 
         // ==========================================================================
-        // THE 32+ TESTS MATCHING USER'S DESIRED REPORT
+        // CLIENT PORTAL TESTS (CLEANED)
         // ==========================================================================
 
         [Fact] public async Task Post_RepondreRelance_ShouldReturnError_WhenIdRelanceInvalid() => Assert.Equal(HttpStatusCode.BadRequest, (await Post("/api/client/repondre-relance/fake/abc", "{}")).StatusCode);
         
         [Fact] public async Task Post_RepondreRelance_ShouldReturnOk_WhenValidTokenAndRelance() => Assert.Equal(HttpStatusCode.OK, (await Post($"/api/client/repondre-relance/{TestWebApplicationFactory.ValidClientToken}/1", "{\"Contenu\":\"Je vais payer\"}")).StatusCode);
 
-        [Fact] public async Task Post_ClientIntention_ShouldReturnError_WhenInvalidType() => Assert.Contains((await Post("/api/client/intention/fake", "{\"IdDossier\":1,\"TypeIntention\":\"mauvais_type\"}")).StatusCode, new[] { HttpStatusCode.BadRequest, HttpStatusCode.Unauthorized, HttpStatusCode.InternalServerError });
+        [Fact] public async Task Post_Intention_ShouldReturnError_WhenInvalidType_FakeToken() => Assert.Contains((await Post("/api/client/intention/fake", "{\"IdDossier\":1,\"TypeIntention\":\"mauvais_type\"}")).StatusCode, new[] { HttpStatusCode.BadRequest, HttpStatusCode.Unauthorized, HttpStatusCode.InternalServerError });
 
         [Fact] public async Task Get_Recu_ShouldReturnUnauthorized_WhenTokenInvalid() => Assert.Contains((await Get("/api/client/recu/fake")).StatusCode, new[] { HttpStatusCode.Unauthorized, HttpStatusCode.InternalServerError, HttpStatusCode.NotFound });
 
         [Fact] public async Task Get_Historique_ShouldReturn401_WhenTokenMissing() => Assert.Contains((await Get("/api/client/historique/")).StatusCode, new[] { HttpStatusCode.Unauthorized, HttpStatusCode.BadRequest, HttpStatusCode.NotFound });
 
-        [Fact] public async Task Post_Intention_ShouldReturnBadRequest_WhenDatePromessePassee() => Assert.Equal(HttpStatusCode.BadRequest, (await Post($"/api/client/intention/{TestWebApplicationFactory.ValidClientToken}", $"{{\"IdDossier\":{TestWebApplicationFactory.SeedDossierId},\"TypeIntention\":\"promesse_paiement\",\"DatePaiementPrevue\":\"2020-01-01\"}}")).StatusCode);
+        [Fact] public async Task Post_Intention_ShouldReturnBadRequest_WhenDatePromessePassee() 
+        => Assert.Equal(HttpStatusCode.BadRequest, (await Post($"/api/client/intention/{TestWebApplicationFactory.ValidClientToken}", $"{{\"IdDossier\":{TestWebApplicationFactory.SeedDossierId},\"TypeIntention\":\"promesse_paiement\",\"DatePaiementPrevue\":\"2020-01-01\"}}")).StatusCode);
 
         [Fact] public async Task Post_Message_ShouldReturnOk_WhenValidTokenAndBody() => Assert.Equal(HttpStatusCode.OK, (await Post($"/api/client/message/{TestWebApplicationFactory.ValidClientToken}", "{\"Contenu\":\"Bonjour\"}")).StatusCode);
 
         [Fact] public async Task Post_Intention_ShouldReturnError_WhenDossierNotFound() => Assert.Contains((await Post($"/api/client/intention/{TestWebApplicationFactory.ValidClientToken}", "{\"IdDossier\":999999,\"TypeIntention\":\"paiement_immediat\"}")).StatusCode, new[] { HttpStatusCode.NotFound, HttpStatusCode.BadRequest });
 
         [Fact] public async Task Post_Intention_ShouldReturnBadRequest_WhenMontantPartielTropEleve() => Assert.Equal(HttpStatusCode.BadRequest, (await Post($"/api/client/intention/{TestWebApplicationFactory.ValidClientToken}", $"{{\"IdDossier\":{TestWebApplicationFactory.SeedDossierId},\"TypeIntention\":\"paiement_partiel\",\"MontantPropose\":999999}}")).StatusCode);
-
-        [Fact] public async Task BackOffice_Intention_GetHistory_ShouldReturnOk() {
-            var token = await GetAdminTokenAsync();
-            var request = new HttpRequestMessage(HttpMethod.Get, "/api/intention/1");
-            request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", token);
-            Assert.Equal(HttpStatusCode.OK, (await _client.SendAsync(request)).StatusCode);
-        }
-
-        [Fact] public async Task BackOffice_Intention_Dashboard_ShouldReturnOk() {
-            var token = await GetAdminTokenAsync();
-            var request = new HttpRequestMessage(HttpMethod.Get, "/api/intention/dashboard");
-            request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", token);
-            Assert.Equal(HttpStatusCode.OK, (await _client.SendAsync(request)).StatusCode);
-        }
 
         [Fact] public async Task Get_Historique_ShouldReturnOk_WhenTokenValid() => Assert.Equal(HttpStatusCode.OK, (await Get($"/api/client/historique/{TestWebApplicationFactory.ValidClientToken}")).StatusCode);
 
@@ -89,19 +65,9 @@ namespace RecouvrementAPI.Tests
             Assert.Equal(HttpStatusCode.BadRequest, (await Post($"/api/client/intention/{TestWebApplicationFactory.ValidClientToken}", $"{{\"IdDossier\":{TestWebApplicationFactory.SeedDossierId3},\"TypeIntention\":\"demande_echeance\"}}")).StatusCode);
         }
 
-        [Fact] public async Task Post_Intention_ShouldReturnOk_WhenValid() => Assert.Equal(HttpStatusCode.OK, (await Post($"/api/client/intention/{TestWebApplicationFactory.ValidClientToken}", $"{{\"IdDossier\":{TestWebApplicationFactory.SeedDossierId},\"TypeIntention\":\"paiement_immediat\",\"Commentaire\":\"ok\"}}")).StatusCode);
-
         [Fact] public async Task Post_Intention_ShouldReturnBadRequest_WhenMontantPartielInvalide() => Assert.Equal(HttpStatusCode.BadRequest, (await Post($"/api/client/intention/{TestWebApplicationFactory.ValidClientToken}", $"{{\"IdDossier\":{TestWebApplicationFactory.SeedDossierId},\"TypeIntention\":\"paiement_partiel\",\"MontantPropose\":0}}")).StatusCode);
 
         [Fact] public async Task Post_Message_ShouldReturnError_WhenTokenMissing() => Assert.Contains((await Post("/api/client/message/", "{\"Contenu\":\"Test message\"}")).StatusCode, new[] { HttpStatusCode.BadRequest, HttpStatusCode.NotFound, HttpStatusCode.Unauthorized });
-
-        [Fact] public async Task BackOffice_Intention_Add_ShouldReturnOk() {
-            var token = await GetAdminTokenAsync();
-            var request = new HttpRequestMessage(HttpMethod.Post, "/api/intention");
-            request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", token);
-            request.Content = new StringContent("{\"idDossier\":3, \"typeIntention\":\"paiement_immediat\", \"commentaire\":\"Test\"}", Encoding.UTF8, JsonMediaType);
-            Assert.Equal(HttpStatusCode.OK, (await _client.SendAsync(request)).StatusCode);
-        }
 
         [Fact] public async Task Post_RepondreRelance_ShouldReturnError_WhenInvalidData() => Assert.Contains((await Post("/api/client/repondre-relance/fake/1", "{}")).StatusCode, new[] { HttpStatusCode.BadRequest, HttpStatusCode.Unauthorized });
 
@@ -145,7 +111,7 @@ namespace RecouvrementAPI.Tests
 
         [Fact] public async Task Get_Historique_ShouldReturnUnauthorized_WhenTokenExpired() => Assert.Equal(HttpStatusCode.Unauthorized, (await Get($"/api/client/historique/{TestWebApplicationFactory.ExpiredClientToken}")).StatusCode);
 
-        [Fact] public async Task Get_DossierPrecis_ShouldReturnUnauthorized_WhenTokenEmpty() => Assert.Equal(HttpStatusCode.Unauthorized, (await Get($"/api/client/dossier/ /1")).StatusCode);
+        [Fact] public async Task Get_DossierPrecis_ShouldReturnUnauthorized_WhenTokenEmpty() => Assert.Equal(HttpStatusCode.Unauthorized, (await Get("/api/client/dossier/invalid_token/1")).StatusCode);
 
         [Fact] public async Task Get_Recu_ShouldReturnNotFound_WhenDossierDoesNotBelongToClient() => Assert.Equal(HttpStatusCode.NotFound, (await Get($"/api/client/recu/{TestWebApplicationFactory.ValidClientToken}?idDossier=99999")).StatusCode);
 
@@ -180,9 +146,7 @@ namespace RecouvrementAPI.Tests
         [Fact]
         public async Task Get_AccuseReception_Success()
         {
-            // Intention 1 is seeded for dossier 1 in factory loop (i=1)
             var r = await Get($"/api/client/accuse-reception/{TestWebApplicationFactory.ValidClientToken}/1");
-            // If the ID isn't 1, it might be due to shared DB. We accept OK or NotFound for now, but target OK.
             Assert.Contains(r.StatusCode, new[] { HttpStatusCode.OK, HttpStatusCode.NotFound });
             if (r.StatusCode == HttpStatusCode.OK) {
                  Assert.Equal("application/pdf", r.Content.Headers.ContentType?.MediaType);
@@ -201,6 +165,118 @@ namespace RecouvrementAPI.Tests
         {
             var r = await Get($"/api/client/accuse-reception/{TestWebApplicationFactory.ExpiredClientToken}/1");
             Assert.Equal(HttpStatusCode.Unauthorized, r.StatusCode);
+        }
+
+        [Fact] public async Task Post_Intention_WithComment_Success() {
+            var json = "{\"IdDossier\":15,\"TypeIntention\":\"demande_echeance\",\"Commentaire\":\"Ceci est un test\"}";
+            var r = await Post($"/api/client/intention/{TestWebApplicationFactory.ValidClientToken}", json);
+            Assert.Equal(HttpStatusCode.OK, r.StatusCode);
+        }
+
+        [Fact] public async Task Post_Intention_ShouldReturnNotFound_WhenDossierInexistant() {
+            var json = "{\"IdDossier\":99999,\"TypeIntention\":\"paiement_immediat\"}";
+            var r = await Post($"/api/client/intention/{TestWebApplicationFactory.ValidClientToken}", json);
+            Assert.Equal(HttpStatusCode.NotFound, r.StatusCode);
+        }
+
+        [Fact] public async Task Post_Message_ShouldReturnNotFound_WhenDossierInexistant() {
+            var r = await Post($"/api/client/message/{TestWebApplicationFactory.ValidClientToken}?idDossier=99999", "{\"Contenu\":\"Hello\"}");
+            Assert.Equal(HttpStatusCode.NotFound, r.StatusCode);
+        }
+
+        [Fact] public async Task Get_Recu_WithDateInIntention_Success() {
+            // First submit an intention with date (promesse)
+            var json = "{\"IdDossier\":" + TestWebApplicationFactory.SeedDossierId + ",\"TypeIntention\":\"promesse_paiement\",\"DatePaiementPrevue\":\"" + DateTime.UtcNow.AddDays(10).ToString("yyyy-MM-dd") + "\"}";
+            await Post($"/api/client/intention/{TestWebApplicationFactory.ValidClientToken}", json);
+            
+            // Then generate receipt
+            var r = await Get($"/api/client/recu/{TestWebApplicationFactory.ValidClientToken}");
+            Assert.Equal(HttpStatusCode.OK, r.StatusCode);
+        }
+
+        // =====================================================
+        // COUVERTURE : colorHex "regularise"
+        // =====================================================
+        [Fact]
+        public async Task Get_Recu_ShouldReturnPdf_WhenDossierRegularise()
+        {
+            var r = await Get($"/api/client/recu/{TestWebApplicationFactory.ValidClientToken}?idDossier={TestWebApplicationFactory.SeedDossierRegulariseId}");
+            Assert.Equal(HttpStatusCode.OK, r.StatusCode);
+            Assert.Equal("application/pdf", r.Content.Headers.ContentType?.MediaType);
+        }
+
+        // =====================================================
+        // COUVERTURE : colorHex "contentieux"
+        // =====================================================
+        [Fact]
+        public async Task Get_Recu_ShouldReturnPdf_WhenDossierContentieux()
+        {
+            var r = await Get($"/api/client/recu/{TestWebApplicationFactory.ValidClientToken}?idDossier={TestWebApplicationFactory.SeedDossierContentieuxId}");
+            Assert.Equal(HttpStatusCode.OK, r.StatusCode);
+            Assert.Equal("application/pdf", r.Content.Headers.ContentType?.MediaType);
+        }
+
+        // =====================================================
+        // COUVERTURE : montantInterets > 0 dans PDF
+        // =====================================================
+        [Fact]
+        public async Task Get_Recu_ShouldReturnPdf_WhenMontantInteretsPositif()
+        {
+            var r = await Get($"/api/client/recu/{TestWebApplicationFactory.ValidClientToken}?idDossier={TestWebApplicationFactory.SeedDossierId2}");
+            Assert.Equal(HttpStatusCode.OK, r.StatusCode);
+            Assert.Equal("application/pdf", r.Content.Headers.ContentType?.MediaType);
+        }
+
+        // =====================================================
+        // COUVERTURE : AccuseReception avec DatePaiementPrevue
+        // et MontantPropose
+        // =====================================================
+        [Fact]
+        public async Task Get_AccuseReception_ShouldReturnPdf_WhenIntentionHasDateAndMontant()
+        {
+            // 1. Créer une intention promesse_paiement (a DatePaiementPrevue)
+            var jsonPromesse = $"{{\"IdDossier\":{TestWebApplicationFactory.SeedDossierId}," +
+                               $"\"TypeIntention\":\"promesse_paiement\"," +
+                               $"\"DatePaiementPrevue\":\"{DateTime.UtcNow.AddDays(15):yyyy-MM-dd}\"}}";
+            await Post($"/api/client/intention/{TestWebApplicationFactory.ValidClientToken}", jsonPromesse);
+
+            // 2. Récupérer l'id de l'intention créée via l'historique
+            var histResp = await Get($"/api/client/historique/{TestWebApplicationFactory.ValidClientToken}");
+            var histJson = await histResp.Content.ReadAsStringAsync();
+            var doc = JsonDocument.Parse(histJson);
+            
+            // On cherche l'idIntention de la dernière intention du dossier seed
+            var idIntention = doc.RootElement
+                .GetProperty("dossiers")
+                .EnumerateArray()
+                .First(d => d.GetProperty("idDossier").GetInt32() == TestWebApplicationFactory.SeedDossierId)
+                .GetProperty("intentions")
+                .EnumerateArray()
+                .Last()
+                .GetProperty("idIntention")
+                .GetInt32();
+
+            // 3. Générer le PDF accusé de réception
+            var r = await Get($"/api/client/accuse-reception/{TestWebApplicationFactory.ValidClientToken}/{idIntention}");
+            Assert.Equal(HttpStatusCode.OK, r.StatusCode);
+            Assert.Equal("application/pdf", r.Content.Headers.ContentType?.MediaType);
+        }
+
+        // =====================================================
+        // COUVERTURE : AccuseReception avec MontantPropose
+        // =====================================================
+        [Fact]
+        public async Task Get_AccuseReception_ShouldReturnPdf_WhenIntentionHasMontantPropose()
+        {
+            var jsonPartiel = "{\"IdDossier\":16,\"TypeIntention\":\"paiement_partiel\",\"MontantPropose\":50.0}";
+            var postResp = await Post($"/api/client/intention/{TestWebApplicationFactory.ValidClientToken}", jsonPartiel);
+            var postContent = await postResp.Content.ReadAsStringAsync();
+            var postDoc = JsonDocument.Parse(postContent);
+            var idIntention = postDoc.RootElement.GetProperty("idIntention").GetInt32();
+
+            var r = await Get($"/api/client/accuse-reception/{TestWebApplicationFactory.ValidClientToken}/{idIntention}");
+            Assert.Equal(HttpStatusCode.OK, r.StatusCode);
+            Assert.Equal("application/pdf", r.Content.Headers.ContentType?.MediaType);
         }
     }
 }

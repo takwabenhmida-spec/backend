@@ -20,6 +20,9 @@ namespace RecouvrementAPI.Tests
         public const int SeedDossierId = 1;
         public const int SeedDossierId2 = 2;
         public const int SeedDossierId3 = 3;
+        public const int SeedDossierRegulariseId = 20;
+        public const int SeedDossierContentieuxId = 21;
+        public const int SeedIntentionPartielId = 1;
 
         protected override void ConfigureWebHost(IWebHostBuilder builder)
         {
@@ -129,7 +132,9 @@ namespace RecouvrementAPI.Tests
                     MontantImpaye  = 500m  * i,
                     FraisDossier   = 0m,
                     TauxInteret    = 10m,
-                    StatutDossier  = AppConstants.DossierStatut.Amiable,
+                    StatutDossier  = i == SeedDossierRegulariseId ? "regularise" : 
+                                     i == SeedDossierContentieuxId ? "contentieux" : 
+                                     AppConstants.DossierStatut.Amiable,
                     DateCreation   = DateTime.UtcNow.AddDays(-i)
                 });
 

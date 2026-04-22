@@ -29,10 +29,10 @@ namespace RecouvrementAPI.Models
         [Column("frais_dossier")]
         [JsonRequired]
         public decimal FraisDossier { get; set; } // Frais éventuels
-
+    
         [Column("statut_dossier")]
         public string StatutDossier { get; set; } = null!;
-        // Statut : aimable / contentieux / regularise
+        // Statut : aimable / contentieux / regularise/ solde
 
         
 

@@ -6,7 +6,8 @@ C:\recouvrement_client\backend\controllers\ClientListController.cs
 C:\recouvrement_client\backend\controllers\DashboardController.cs
 C:\recouvrement_client\backend\controllers\FicheClientController.cs
 C:\recouvrement_client\backend\controllers\ImpayeController.cs
-C:\recouvrement_client\backend\controllers\intentioncontroller.cs
+C:\recouvrement_client\backend\controllers\intentionAdmincontroller.cs
+C:\recouvrement_client\backend\controllers\IntentionController.cs
 C:\recouvrement_client\backend\controllers\RelanceController.cs
 C:\recouvrement_client\backend\controllers\ScoringController.cs
 C:\recouvrement_client\backend\controllers\UtilisateurController.cs
@@ -46,6 +47,10 @@ C:\recouvrement_client\backend\Models\RelanceClient.cs
 C:\recouvrement_client\backend\Models\ScoreRisque.cs
 C:\recouvrement_client\backend\Models\UtilisateurBack.cs
 C:\recouvrement_client\backend\Program.cs
+C:\recouvrement_client\backend\Services\EmailService.cs
+C:\recouvrement_client\backend\Services\IEmailService.cs
+C:\recouvrement_client\backend\Services\ISmsService.cs
+C:\recouvrement_client\backend\Services\SmsService.cs
 C:\recouvrement_client\backend\obj\Debug\net10.0\RecouvrementAPI.GlobalUsings.g.cs
 C:\recouvrement_client\backend\obj\Debug\net10.0\.NETCoreApp,Version=v10.0.AssemblyAttributes.cs
 C:\recouvrement_client\backend\obj\Debug\net10.0\RecouvrementAPI.AssemblyInfo.cs
@@ -58,6 +63,7 @@ C:\recouvrement_client\backend\.dockerignore
 C:\recouvrement_client\backend\.gitignore
 C:\recouvrement_client\backend\build_errors.txt
 C:\recouvrement_client\backend\build_output.txt
+C:\recouvrement_client\backend\CommunicationTest.http
 C:\recouvrement_client\backend\DiagrammeCasUtilisationAdmin.puml
 C:\recouvrement_client\backend\DiagrammeClassesClient.md
 C:\recouvrement_client\backend\docker-compose.yml

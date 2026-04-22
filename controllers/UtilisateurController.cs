@@ -184,7 +184,7 @@ namespace RecouvrementAPI.Controllers
         {
             if (!dateConnexion.HasValue) return "Jamais";
             
-            var nbJours = (DateTime.Now.Date - dateConnexion.Value.Date).Days;
+            var nbJours = (DateTime.UtcNow.Date - dateConnexion.Value.Date).Days;
             var heure = dateConnexion.Value.ToString("HH:mm");
 
             return nbJours switch

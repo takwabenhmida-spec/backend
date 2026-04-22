@@ -4,10 +4,10 @@ using System.Text;
 using System.Threading.Tasks;
 using Xunit;
 using System.Text.Json;
-using System.Linq;
 
 namespace RecouvrementAPI.Tests
 {
+    [Collection("SharedTestCollection")]
     public class ScoringApiTests : IClassFixture<TestWebApplicationFactory>
     {
         private readonly HttpClient _client;
@@ -44,92 +44,104 @@ namespace RecouvrementAPI.Tests
             return await _client.SendAsync(request);
         }
 
+        // Méthode helper pour s'assurer que le modèle est entraîné
+        private async Task EnsureModelTrainedAsync(string token)
+        {
+            await PostWithAuth("/api/scoring/train", token);
+        }
+
+        // =========================
+        // 🧠 TRAIN
+        // =========================
         [Fact]
-        public async Task Scoring_Dashboard_ShouldReturnOk_WhenAuthenticated()
+        public async Task Scoring_Train_ShouldReturnOk()
         {
             var token = await GetAdminTokenAsync();
-            var r = await GetWithAuth("/api/Scoring/dashboard", token);
+            var r = await PostWithAuth("/api/scoring/train", token);
+            Assert.Equal(HttpStatusCode.OK, r.StatusCode);
+
+            var body = await r.Content.ReadAsStringAsync();
+            Assert.Contains("succès", body);
+        }
+
+        // =========================
+        // 📊 DASHBOARD AI (POST)
+        // =========================
+        [Fact]
+        public async Task Scoring_DashboardAI_ShouldReturnOk()
+        {
+            var token = await GetAdminTokenAsync();
+            await EnsureModelTrainedAsync(token);
+
+            // dashboard-ai est un POST
+            var r = await PostWithAuth("/api/scoring/dashboard-ai", token);
             Assert.Equal(HttpStatusCode.OK, r.StatusCode);
         }
 
+        // =========================
+        // 🧮 FORMULA (GET)
+        // =========================
         [Fact]
-        public async Task Scoring_Details_ShouldReturnOk_WhenAuthenticated()
+        public async Task Scoring_Formula_ShouldReturnOk()
         {
             var token = await GetAdminTokenAsync();
-            var r = await GetWithAuth("/api/Scoring/1/details", token);
+            await EnsureModelTrainedAsync(token);
+
+            var r = await GetWithAuth("/api/scoring/formula", token);
             Assert.Equal(HttpStatusCode.OK, r.StatusCode);
         }
 
+        // =========================
+        // 🔮 PREDICT MANUEL (POST)
+        // =========================
         [Fact]
-        public async Task Scoring_RecommandationIA_ShouldReturnOk_WhenAuthenticated()
+        public async Task Scoring_PredictManual_ShouldReturnScore()
         {
             var token = await GetAdminTokenAsync();
-            var r = await GetWithAuth("/api/Scoring/1/recommandation-ia", token);
+            await EnsureModelTrainedAsync(token);
+
+            var json = "{\"retard\":90,\"historique\":40,\"garantie\":0,\"intention\":20}";
+            var r = await PostWithAuth("/api/scoring/predict", token, json);
             Assert.Equal(HttpStatusCode.OK, r.StatusCode);
+
+            var body = await r.Content.ReadAsStringAsync();
+            Assert.Contains("score", body, System.StringComparison.OrdinalIgnoreCase);
+        }
+
+        // =========================
+        // 🎯 PREDICT PAR DOSSIER
+        // =========================
+        [Fact]
+        public async Task Scoring_PredictById_ShouldReturnOk_WhenDossierExists()
+        {
+            var token = await GetAdminTokenAsync();
+            await EnsureModelTrainedAsync(token);
+
+            var r = await PostWithAuth($"/api/scoring/predict/{TestWebApplicationFactory.SeedDossierId}", token);
+            Assert.Equal(HttpStatusCode.OK, r.StatusCode);
+
+            var body = await r.Content.ReadAsStringAsync();
+            Assert.Contains("score", body, System.StringComparison.OrdinalIgnoreCase);
         }
 
         [Fact]
-        public async Task Scoring_RecalculerTous_ShouldReturnOk_WhenAuthenticated()
+        public async Task Scoring_PredictById_ShouldReturnNotFound_WhenDossierDoesNotExist()
         {
             var token = await GetAdminTokenAsync();
-            var r = await PostWithAuth("/api/Scoring/recalculer-tous", token);
-            Assert.Equal(HttpStatusCode.OK, r.StatusCode);
-        }
+            await EnsureModelTrainedAsync(token);
 
-        [Fact]
-        public async Task Scoring_RecalculerDossier_ShouldReturnOk_WhenAuthenticated()
-        {
-            var token = await GetAdminTokenAsync();
-            var r = await PostWithAuth("/api/Scoring/1/recalculer", token);
-            Assert.Equal(HttpStatusCode.OK, r.StatusCode);
-        }
-
-        // ==========================================================================
-        // NEW COVERAGE TESTS (ADDED TO REDUCE UNCOVERED LINES)
-        // ==========================================================================
-
-        [Fact]
-        public async Task Scoring_Dashboard_ShouldFilterByStatus()
-        {
-            var token = await GetAdminTokenAsync();
-            var r = await GetWithAuth("/api/Scoring/dashboard?etatDossier=aimable", token);
-            Assert.Equal(HttpStatusCode.OK, r.StatusCode);
-        }
-
-        [Fact]
-        public async Task Scoring_Dashboard_ShouldFilterBySearch()
-        {
-            var token = await GetAdminTokenAsync();
-            var r = await GetWithAuth("/api/Scoring/dashboard?recherche=Client", token);
-            Assert.Equal(HttpStatusCode.OK, r.StatusCode);
-        }
-
-        [Fact]
-        public async Task Scoring_Details_ShouldReturnNotFound_WhenDossierInexistant()
-        {
-            var token = await GetAdminTokenAsync();
-            var r = await GetWithAuth("/api/Scoring/99999/details", token);
+            var r = await PostWithAuth("/api/scoring/predict/99999", token);
             Assert.Equal(HttpStatusCode.NotFound, r.StatusCode);
         }
 
+        // =========================
+        // 📥 LOAD + STATUS
+        // =========================
         [Fact]
-        public async Task Scoring_RecommandationIA_CheckLevels_High()
+        public async Task Scoring_Status_ShouldReturnOk()
         {
             var token = await GetAdminTokenAsync();
-            // SeedDossierId 2 by default is medium, let's just check if it returns valid JSON for levels
-            var r = await GetWithAuth("/api/Scoring/2/recommandation-ia", token);
-            var body = await r.Content.ReadAsStringAsync();
-            var doc = JsonDocument.Parse(body);
-            Assert.NotNull(doc.RootElement.GetProperty("niveauRisque").GetString());
-            Assert.NotNull(doc.RootElement.GetProperty("prioriteTraitement").GetString());
-        }
-
-        [Fact]
-        public async Task Scoring_Recalcul_ShouldHandleNonExistantDossier_Silently()
-        {
-            var token = await GetAdminTokenAsync();
-            // The method doesn't return error if dossier not found, just skips
-            var r = await PostWithAuth("/api/Scoring/99999/recalculer", token);
+            var r = await GetWithAuth("/api/scoring/status", token);
             Assert.Equal(HttpStatusCode.OK, r.StatusCode);
         }
     }

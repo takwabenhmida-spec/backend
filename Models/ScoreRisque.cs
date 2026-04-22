@@ -15,22 +15,22 @@ namespace RecouvrementAPI.Models
         public int IdDossier { get; set; }
 
         [Column("score_total")]
-        public int ScoreTotal{ get; set; }
+        public int? ScoreTotal { get; set; }
 
         [Column("points_retard")]
-        public int PointsRetard { get; set; }
+        public int? PointsRetard { get; set; }
 
         [Column("points_historique")]
-        public int PointsHistorique { get; set; }
+        public int? PointsHistorique { get; set; }
 
         [Column("points_garantie")]
-        public int PointsGarantie { get; set; }
+        public int? PointsGarantie { get; set; }
 
         [Column("points_intention")]
-        public int PointsIntention { get; set; }
+        public int? PointsIntention { get; set; }
 
         [Column("niveau_risque")]
-        public string Niveau { get; set; } = null!;
+        public string Niveau { get; set; } = string.Empty;
 
         [Column("date_calcul")]
         public DateTime DateCalcul { get; set; }

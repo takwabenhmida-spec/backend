@@ -1,10 +1,12 @@
-﻿namespace RecouvrementAPI.Tests;
+﻿using Xunit;
+
+namespace RecouvrementAPI.Tests;
 
 public class UnitTest1
 {
     [Fact]
     public void Test1()
     {
-
+        Assert.True(true);
     }
 }

@@ -29,5 +29,6 @@ namespace RecouvrementAPI.DTOs
         public List<HistoriquePaiementDto> Paiements { get; set; }
         public List<RelanceDto> Relances { get; set; }
         public List<CommunicationDto> Communications { get; set; }
+        public List<IntentionItemDto> Intentions { get; set; }
     }
 }

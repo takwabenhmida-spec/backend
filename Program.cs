@@ -69,6 +69,7 @@ builder.Services.AddCors(options =>
 // Enregistrement des services métier (Emails, SMS)
 builder.Services.AddScoped<RecouvrementAPI.Services.IEmailService, RecouvrementAPI.Services.EmailService>();
 builder.Services.AddScoped<RecouvrementAPI.Services.ISmsService, RecouvrementAPI.Services.SmsService>();
+builder.Services.AddSingleton<RecouvrementAPI.Services.ScoringAIService>();
 
 // Enregistrement des services pour les contrôleurs API
 builder.Services.AddControllers();

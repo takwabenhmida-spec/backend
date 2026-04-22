@@ -61,7 +61,7 @@ namespace RecouvrementAPI.Controllers
             // Un client ne peut soumettre qu'UNE SEULE intention par jour (toutes types confondus)
             bool dejaSoumis = await _context.Intentions.AnyAsync(i =>
                 i.IdDossier == intention.IdDossier &&
-                i.DateIntention.Date == DateTime.Today);
+                i.DateIntention.Date == DateTime.UtcNow.Date);
 
             if (dejaSoumis)
                 return BadRequest(new
@@ -70,7 +70,7 @@ namespace RecouvrementAPI.Controllers
                 });
 
             // Date remplie automatiquement côté serveur
-            intention.DateIntention = DateTime.Now;
+            intention.DateIntention = DateTime.UtcNow;
             intention.Statut = STATUT_EN_ATTENTE;
 
             // Commentaire optionnel
@@ -164,8 +164,8 @@ namespace RecouvrementAPI.Controllers
                         .ThenInclude(d => d.ScoresRisque)
                     .AsQueryable();
 
-                var currentMonth = DateTime.Now.Month;
-                var currentYear = DateTime.Now.Year;
+                var currentMonth = DateTime.UtcNow.Month;
+                var currentYear = DateTime.UtcNow.Year;
 
                 var allIntentionsForKpi = await intentionsQuery.ToListAsync();
 
@@ -250,7 +250,7 @@ namespace RecouvrementAPI.Controllers
                 IdDossier = intention.IdDossier,
                 Message = $"Le client a indiqué vouloir effectuer un règlement total immédiat.{commentairePart}",
                 Origine = ORIGINE_SYSTEME,
-                DateEnvoi = DateTime.Now
+                DateEnvoi = DateTime.UtcNow
             });
 
             _context.HistoriqueActions.Add(new HistoriqueAction
@@ -258,7 +258,7 @@ namespace RecouvrementAPI.Controllers
                 IdDossier = intention.IdDossier,
                 ActionDetail = "Client : intention de règlement total immédiat déclarée.",
                 Acteur = ACTEUR_CLIENT,
-                DateAction = DateTime.Now
+                DateAction = DateTime.UtcNow
             });
 
             return Ok();
@@ -277,7 +277,7 @@ namespace RecouvrementAPI.Controllers
                 IdDossier = intention.IdDossier,
                 Message = $"Le client propose un règlement partiel de {intention.MontantPropose:F3} TND (sur {dossier.MontantImpaye:F3} TND dus).{commentairePart}",
                 Origine = ORIGINE_SYSTEME,
-                DateEnvoi = DateTime.Now
+                DateEnvoi = DateTime.UtcNow
             });
 
             _context.HistoriqueActions.Add(new HistoriqueAction
@@ -285,7 +285,7 @@ namespace RecouvrementAPI.Controllers
                 IdDossier = intention.IdDossier,
                 ActionDetail = $"Règlement partiel proposé : {intention.MontantPropose:F3} TND.",
                 Acteur = ACTEUR_CLIENT,
-                DateAction = DateTime.Now
+                DateAction = DateTime.UtcNow
             });
 
             return Ok();
@@ -296,7 +296,7 @@ namespace RecouvrementAPI.Controllers
             if (!intention.DatePaiementPrevue.HasValue)
                 return BadRequest(new { message = "Une date de paiement prévue est requise pour une promesse de paiement." });
 
-            if (intention.DatePaiementPrevue.Value.Date <= DateTime.Today)
+            if (intention.DatePaiementPrevue.Value.Date <= DateTime.UtcNow.Date)
                 return BadRequest(new { message = "La date de paiement promise doit être dans le futur." });
 
             _context.Echeances.Add(new Echeance
@@ -312,7 +312,7 @@ namespace RecouvrementAPI.Controllers
                 IdDossier = intention.IdDossier,
                 Message = $"Le client a promis un paiement pour le {intention.DatePaiementPrevue.Value:dd/MM/yyyy}.{commentairePart}",
                 Origine = ORIGINE_SYSTEME,
-                DateEnvoi = DateTime.Now
+                DateEnvoi = DateTime.UtcNow
             });
 
             _context.HistoriqueActions.Add(new HistoriqueAction
@@ -320,7 +320,7 @@ namespace RecouvrementAPI.Controllers
                 IdDossier = intention.IdDossier,
                 ActionDetail = $"Promesse de paiement prévue le {intention.DatePaiementPrevue.Value:dd/MM/yyyy}.",
                 Acteur = ACTEUR_CLIENT,
-                DateAction = DateTime.Now
+                DateAction = DateTime.UtcNow
             });
 
             return Ok();
@@ -333,7 +333,7 @@ namespace RecouvrementAPI.Controllers
                 IdDossier = intention.IdDossier,
                 Message = $"Le client demande une consolidation (restructuration) de sa dette.{commentairePart}",
                 Origine = ORIGINE_SYSTEME,
-                DateEnvoi = DateTime.Now
+                DateEnvoi = DateTime.UtcNow
             });
 
             _context.HistoriqueActions.Add(new HistoriqueAction
@@ -341,7 +341,7 @@ namespace RecouvrementAPI.Controllers
                 IdDossier = intention.IdDossier,
                 ActionDetail = "Demande de consolidation/restructuration de dette soumise.",
                 Acteur = ACTEUR_CLIENT,
-                DateAction = DateTime.Now
+                DateAction = DateTime.UtcNow
             });
 
             return Ok();
@@ -354,7 +354,7 @@ namespace RecouvrementAPI.Controllers
                 IdDossier = intention.IdDossier,
                 Message = $"Le client demande un échéancier de paiement.{commentairePart}",
                 Origine = ORIGINE_SYSTEME,
-                DateEnvoi = DateTime.Now
+                DateEnvoi = DateTime.UtcNow
             });
 
             _context.HistoriqueActions.Add(new HistoriqueAction
@@ -362,7 +362,7 @@ namespace RecouvrementAPI.Controllers
                 IdDossier = intention.IdDossier,
                 ActionDetail = "Demande d'échéancier de paiement soumise.",
                 Acteur = ACTEUR_CLIENT,
-                DateAction = DateTime.Now
+                DateAction = DateTime.UtcNow
             });
 
             return Ok();
@@ -377,7 +377,7 @@ namespace RecouvrementAPI.Controllers
                 IdDossier = intention.IdDossier,
                 Message = $"Le client a soumis une réclamation. Dossier passé en contentieux.{commentairePart}",
                 Origine = ORIGINE_SYSTEME,
-                DateEnvoi = DateTime.Now
+                DateEnvoi = DateTime.UtcNow
             });
 
             _context.HistoriqueActions.Add(new HistoriqueAction
@@ -385,7 +385,7 @@ namespace RecouvrementAPI.Controllers
                 IdDossier = intention.IdDossier,
                 ActionDetail = "Réclamation soumise — dossier passé en contentieux.",
                 Acteur = ACTEUR_CLIENT,
-                DateAction = DateTime.Now
+                DateAction = DateTime.UtcNow
             });
 
             return Ok();

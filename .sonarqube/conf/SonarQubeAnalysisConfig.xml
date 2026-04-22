@@ -159,11 +159,12 @@
     <Property Name="sonar.java.jvmframeworkconfig.activate">true</Property>
     <Property Name="sonar.updatecenter.url">https://downloads.sonarsource.com/sonarqube/update/update-center.properties</Property>
     <Property Name="sonar.core.id">147B411E-AZ2D_edb5i8aj7FVRVZc</Property>
-    <Property Name="sonar.core.startTime">14/04/2026 23:59:56</Property>
+    <Property Name="sonar.core.startTime">20/04/2026 21:52:12</Property>
   </ServerSettings>
   <LocalSettings>
     <Property Name="sonar.host.url">http://localhost:9000</Property>
     <Property Name="sonar.cs.opencover.reportsPaths">C:\recouvrement_client\backend\RecouvrementAPI.Tests\coverage.opencover.xml</Property>
+    <Property Name="sonar.inclusions">controllers/ClientController.cs,controllers/IntentionController.cs,Models/Client.cs,Models/Communication.cs,Models/DossierRecouvrement.cs,Models/Echeance.cs,Models/HistoriquePaiement.cs,Models/IntentionClient.cs,Models/RelanceClient.cs</Property>
     <Property Name="sonar.exclusions">C:\recouvrement_client\backend\RecouvrementAPI.Tests\coverage.opencover.xml</Property>
   </LocalSettings>
   <ScannerOptsSettings />
@@ -176,10 +177,6 @@
         <AnalyzerPlugin Key="csharp" Version="10.23.0.137933" StaticResourceName="SonarAnalyzer-csharp-10.23.0.137933.zip">
           <AssemblyPaths>
             <Path>C:\Users\1000TEK\AppData\Local\Temp\.sonarqube\resources\0\SonarAnalyzer.CSharp.dll</Path>
-            <Path>C:\Users\1000TEK\AppData\Local\Temp\.sonarqube\resources\0\licenses\LICENSE.txt</Path>
-            <Path>C:\Users\1000TEK\AppData\Local\Temp\.sonarqube\resources\0\licenses\THIRD_PARTY_LICENSES\Google.Protobuf-LICENSE.txt</Path>
-            <Path>C:\Users\1000TEK\AppData\Local\Temp\.sonarqube\resources\0\licenses\THIRD_PARTY_LICENSES\Roslyn-LICENSE.txt</Path>
-            <Path>C:\Users\1000TEK\AppData\Local\Temp\.sonarqube\resources\0\licenses\THIRD_PARTY_LICENSES\StyleCop.Analyzers-LICENSE.txt</Path>
           </AssemblyPaths>
         </AnalyzerPlugin>
       </AnalyzerPlugins>

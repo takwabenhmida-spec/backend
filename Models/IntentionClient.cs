@@ -2,7 +2,6 @@
 using System;
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
-using System.Text.Json.Serialization;
 
 namespace RecouvrementAPI.Models
 {
@@ -13,17 +12,17 @@ namespace RecouvrementAPI.Models
         [Column("id_intention")]
         public int IdIntention { get; set; }
 
-        
+#pragma warning disable S6964
         [Column("id_dossier")]
-        [JsonRequired]
         public int IdDossier { get; set; }
+
+        [Column("date_intention")]
+        public DateTime DateIntention { get; set; }
+#pragma warning restore S6964
 
         [Required]
         [Column("type_intention")]
         public string TypeIntention { get; set; } = string.Empty;
-
-        [Column("date_intention")]
-        public DateTime DateIntention { get; set; }
 
         [Column("date_paiement_prevue")]
         public DateTime? DatePaiementPrevue { get; set; }
